@@ -1,29 +1,22 @@
 {
-  "name": "chotainsta",
+  "name": "instalite",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "InstaLite backend",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "seed": "prisma db seed"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Ashudahiya1/chota_insta.git"
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Ashudahiya1/chota_insta/issues"
-  },
-  "homepage": "https://github.com/Ashudahiya1/chota_insta#readme",
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
-    "dotenv": "^18.0.9",
-    "express": "^5.3.0",
-    "pg": "^8.23.1"
+    "dotenv": "^16.4.5",
+    "express": "^5.0.0",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "prisma": "^7.10.1"
