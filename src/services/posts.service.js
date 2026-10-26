@@ -1,10 +1,11 @@
 const prisma = require("../db");
 
 const createPost = async (data) => {
-  const { imageUrl, caption, location } = data;
+  const { imageUrl, authorId, caption, location } = data;
   return await prisma.post.create({
     data: {
       imageUrl,
+      authorId,
       ...(caption !== undefined && { caption }),
       ...(location !== undefined && { location }),
     },
@@ -34,7 +35,10 @@ const listPosts = async ({ skip, limit, sortBy, order, location, search, from, t
     if (to) where.createdAt.lt = new Date(to);
   }
 
-  const orderBy = { [sortBy]: order };
+  const orderBy =
+    sortBy === "likes"
+      ? [{ likes: { _count: order } }, { createdAt: "desc" }]
+      : { [sortBy]: order };
 
   const [posts, total] = await prisma.$transaction([
     prisma.post.findMany({
@@ -42,6 +46,20 @@ const listPosts = async ({ skip, limit, sortBy, order, location, search, from, t
       orderBy,
       skip,
       take: limit,
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            fullname: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+          },
+        },
+      },
     }),
     prisma.post.count({ where }),
   ]);
@@ -52,6 +70,20 @@ const listPosts = async ({ skip, limit, sortBy, order, location, search, from, t
 const getPostById = async (id) => {
   return await prisma.post.findUnique({
     where: { id },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          fullname: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+        },
+      },
+    },
   });
 };
 

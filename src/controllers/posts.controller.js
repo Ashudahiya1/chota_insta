@@ -2,15 +2,28 @@ const postsService = require("../services/posts.service");
 const { parsePagination, formatPaginationMeta } = require("../utils/pagination");
 
 const create = async (req, res) => {
-  const { imageUrl, caption, location } = req.body;
-  if (!imageUrl) {
-    return res.status(400).json({ error: "imageUrl is required" });
+  const { imageUrl, authorId, caption, location } = req.body;
+  if (!imageUrl || !authorId) {
+    return res.status(400).json({ error: "imageUrl and authorId are required" });
+  }
+
+  const parsedAuthorId = parseInt(authorId, 10);
+  if (isNaN(parsedAuthorId)) {
+    return res.status(404).json({ error: "User not found" });
   }
 
   try {
-    const post = await postsService.createPost({ imageUrl, caption, location });
+    const post = await postsService.createPost({
+      imageUrl,
+      authorId: parsedAuthorId,
+      caption,
+      location,
+    });
     return res.status(201).json(post);
   } catch (err) {
+    if (err.code === "P2003" || err.code === "P2025") {
+      return res.status(404).json({ error: "User not found" });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
