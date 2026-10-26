@@ -36,9 +36,9 @@ const list = async (req, res) => {
 
   const { sortBy = "createdAt", order = "desc", location, search, from, to } = req.query;
 
-  const allowedSortBy = ["createdAt", "updatedAt"];
+  const allowedSortBy = ["createdAt", "updatedAt", "likes"];
   if (!allowedSortBy.includes(sortBy)) {
-    return res.status(400).json({ error: "sortBy must be one of: createdAt, updatedAt" });
+    return res.status(400).json({ error: "sortBy must be one of: createdAt, updatedAt, likes" });
   }
 
   if (order !== "asc" && order !== "desc") {
