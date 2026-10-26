@@ -87,6 +87,33 @@ const getPostById = async (id) => {
   });
 };
 
+const getPostLikes = async (postId) => {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) {
+    return { notFound: true };
+  }
+
+  const likes = await prisma.like.findMany({
+    where: { postId },
+    orderBy: {
+      user: {
+        username: "asc",
+      },
+    },
+    select: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          fullname: true,
+        },
+      },
+    },
+  });
+
+  return { users: likes.map((l) => l.user) };
+};
+
 const updatePost = async (id, data) => {
   return await prisma.post.update({
     where: { id },
@@ -104,6 +131,7 @@ module.exports = {
   createPost,
   listPosts,
   getPostById,
+  getPostLikes,
   updatePost,
   deletePost,
 };

@@ -24,7 +24,7 @@ const list = async (req, res) => {
     return res.status(400).json({ error: pagination.error });
   }
 
-  const { sortBy = "createdAt", order = "desc", isPrivate, search } = req.query;
+  const { sortBy = "createdAt", order = "desc", isPrivate, search, hasPosts } = req.query;
 
   const allowedSortBy = ["createdAt", "username", "fullname"];
   if (!allowedSortBy.includes(sortBy)) {
@@ -46,6 +46,17 @@ const list = async (req, res) => {
     }
   }
 
+  let parsedHasPosts;
+  if (hasPosts !== undefined) {
+    if (hasPosts === "true") {
+      parsedHasPosts = true;
+    } else if (hasPosts === "false") {
+      parsedHasPosts = false;
+    } else {
+      return res.status(400).json({ error: "hasPosts must be true or false" });
+    }
+  }
+
   try {
     const { users, total } = await usersService.listUsers({
       skip: pagination.skip,
@@ -54,6 +65,7 @@ const list = async (req, res) => {
       order,
       isPrivate: parsedIsPrivate,
       search,
+      hasPosts: parsedHasPosts,
     });
 
     return res.status(200).json({
@@ -77,6 +89,36 @@ const getOne = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     return res.status(200).json(user);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getPosts = async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const pagination = parsePagination(req.query);
+  if (pagination.error) {
+    return res.status(400).json({ error: pagination.error });
+  }
+
+  try {
+    const result = await usersService.getUserPosts(id, {
+      skip: pagination.skip,
+      limit: pagination.limit,
+    });
+
+    if (result.notFound) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({
+      data: result.posts,
+      meta: formatPaginationMeta(result.total, pagination.page, pagination.limit),
+    });
   } catch (err) {
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -126,6 +168,7 @@ module.exports = {
   create,
   list,
   getOne,
+  getPosts,
   update,
   remove,
 };

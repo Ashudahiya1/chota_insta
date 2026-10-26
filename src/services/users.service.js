@@ -12,7 +12,7 @@ const createUser = async (data) => {
   });
 };
 
-const listUsers = async ({ skip, limit, sortBy, order, isPrivate, search }) => {
+const listUsers = async ({ skip, limit, sortBy, order, isPrivate, search, hasPosts }) => {
   const where = {};
 
   if (isPrivate !== undefined) {
@@ -24,6 +24,14 @@ const listUsers = async ({ skip, limit, sortBy, order, isPrivate, search }) => {
       { username: { contains: search, mode: "insensitive" } },
       { fullname: { contains: search, mode: "insensitive" } },
     ];
+  }
+
+  if (hasPosts !== undefined) {
+    if (hasPosts === true) {
+      where.posts = { some: {} };
+    } else if (hasPosts === false) {
+      where.posts = { none: {} };
+    }
   }
 
   const orderBy = { [sortBy]: order };
@@ -44,7 +52,42 @@ const listUsers = async ({ skip, limit, sortBy, order, isPrivate, search }) => {
 const getUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { id },
+    include: {
+      _count: {
+        select: {
+          posts: true,
+          likes: true,
+        },
+      },
+    },
   });
+};
+
+const getUserPosts = async (userId, { skip, limit }) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    return { notFound: true };
+  }
+
+  const where = { authorId: userId };
+  const [posts, total] = await prisma.$transaction([
+    prisma.post.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      include: {
+        _count: {
+          select: {
+            likes: true,
+          },
+        },
+      },
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  return { posts, total };
 };
 
 const updateUser = async (id, data) => {
@@ -64,6 +107,7 @@ module.exports = {
   createUser,
   listUsers,
   getUserById,
+  getUserPosts,
   updateUser,
   deleteUser,
 };
