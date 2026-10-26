@@ -12,8 +12,33 @@ const createUser = async (data) => {
   });
 };
 
-const listUsers = async () => {
-  return await prisma.user.findMany();
+const listUsers = async ({ skip, limit, sortBy, order, isPrivate, search }) => {
+  const where = {};
+
+  if (isPrivate !== undefined) {
+    where.isPrivate = isPrivate;
+  }
+
+  if (search) {
+    where.OR = [
+      { username: { contains: search, mode: "insensitive" } },
+      { fullname: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const orderBy = { [sortBy]: order };
+
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return { users, total };
 };
 
 const getUserById = async (id) => {
